@@ -1,0 +1,95 @@
+/*Link: paleta de colores: https: //coolors.co/ffffff-fff8e8-fcd581-d52941-990d35*/
+
+body {
+  font-family: Arial, sans-serif;
+  background-color: #990d35;
+}
+
+.container {
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #fff8e8;
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+h1,
+h2,
+p {
+  text-align: center;
+}
+h1{
+  color: #ffffff;
+}
+
+img {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  display: block;
+  margin: 0 auto;
+}
+
+input[type="text"] {
+  width: 94%;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 3px;
+  border: 1px solid #FCD581;
+}
+
+button {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  background-color: black;
+  border: none;
+  color: #FFF8E8;
+  font-weight: bold;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+#weatherInfo {
+  margin-top: 20px;
+  padding: 10px;
+  background-color: #FFF8E8;
+  border-radius: 3px;
+}
+
+footer {
+  background-color: #FCD581;
+  text-align: center;
+  color: black;
+  font-size: x-large;
+  font-weight: bold;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+
+@media only screen and (max-width: 600px) {
+  .container {
+    max-width: 100%;
+    padding: 10px;
+  }
+
+  input[type="text"] {
+    width: 96%;
+  }
+}
+
+@media only screen and (max-width: 400px) {
+  h1 {
+    font-size: 24px;
+  }
+
+  img {
+    width: 80px;
+    height: 80px;
+  }
+
+  p {
+    font-size: 16px;
+  }
+}
