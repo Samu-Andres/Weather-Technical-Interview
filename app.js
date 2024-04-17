@@ -1,78 +1,65 @@
-function getWeather() {
-    var city = document.getElementById('cityInput').value;
-    /*var apiKey = '514f2f606e3bd56b7ab9bd449e843c5d'; */
+/// apiKey = '514f2f606e3bd56b7ab9bd449e843c5d';
 
-  
-    fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&APPID=514f2f606e3bd56b7ab9bd449e843c5d`)
-      .then(function(response) {
-        return response.json();
-      })
-      .then(function (data) {
-        showWeather(data);
-        saveLastLocation(city, data);
-      })
-      .catch(function(error) {
-        console.log(error);
-      });
+const inputBox = document.querySelector('.input-box');
+const searchBtn = document.getElementById('searchBtn');
+const weather_img = document.querySelector('.weather-img');
+const temperature = document.querySelector('.temperature');
+const description = document.querySelector('.description');
+const humidity = document.getElementById('humidity');
+const wind_speed = document.getElementById('wind-speed');
+
+const location_not_found = document.querySelector('.location-not-found');
+
+const weather_body = document.querySelector('.weather-body');
+
+
+async function checkWeather(city){
+    const api_key = "514f2f606e3bd56b7ab9bd449e843c5d";
+    const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${api_key}`;
+
+    const weather_data = await fetch(`${url}`).then(response => response.json());
+
+
+    if(weather_data.cod === `404`){
+        location_not_found.style.display = "flex";
+        weather_body.style.display = "none";
+        console.log("error");
+        return;
+    }
+
+    console.log("run");
+    location_not_found.style.display = "none";
+    weather_body.style.display = "flex";
+    temperature.innerHTML = `${Math.round(weather_data.main.temp - 273.15)}°C`;
+    description.innerHTML = `${weather_data.weather[0].description}`;
+
+    humidity.innerHTML = `${weather_data.main.humidity}%`;
+    wind_speed.innerHTML = `${weather_data.wind.speed}Km/H`;
+
+
+    switch(weather_data.weather[0].main){
+        case 'Clouds':
+            weather_img.src = "/assets/cloud.png";
+            break;
+        case 'Clear':
+            weather_img.src = "/assets/clear.png";
+            break;
+        case 'Rain':
+            weather_img.src = "/assets/rain.png";
+            break;
+        case 'Mist':
+            weather_img.src = "/assets/mist.png";
+            break;
+        case 'Snow':
+            weather_img.src = "/assets/snow.png";
+            break;
+
+    }
+
+    console.log(weather_data);
 }
 
-function showWeather(data) {
-    var weatherInfo = document.getElementById('weatherInfo');
-    weatherInfo.innerHTML = ' ';
 
-    var cityName = document.createElement('h2');
-    cityName.textContent = data.name;
-    weatherInfo.appendChild(cityName);
-
-    var temperature = document.createElement('p');
-    temperature.textContent = 'Temperature: ' + (data.main.temp - 273.15).toFixed(2) + '°C';
-    weatherInfo.appendChild(temperature);
-
-    var maxTemperature = document.createElement('p');
-    maxTemperature.textContent = 'Max Temperature: ' + (data.main.temp_max - 273.15).toFixed(2) + '°C';
-    weatherInfo.appendChild(maxTemperature);
-
-    var minTemperature = document.createElement('p');
-    minTemperature.textContent = 'Min Temperature: ' + (data.main.temp_min - 273.15).toFixed(2) + '°C';
-    weatherInfo.appendChild(minTemperature);
-
-    var humidity = document.createElement('p');
-    humidity.textContent = 'Humidity: ' + data.main.humidity + '%';
-    weatherInfo.appendChild(humidity);
-
-    var description = document.createElement('p');
-    description.textContent = 'Description: ' + data.weather[0].description;
-    weatherInfo.appendChild(description);
-
-    var icon = document.createElement('img');
-    icon.src = 'http://openweathermap.org/img/w/' + data.weather[0].icon + '.png';
-    weatherInfo.appendChild(icon);
-
-    var wind = document.createElement('p');
-    wind.textContent = 'Wind: ' + data.wind.speed + 'km/h';
-    weatherInfo.appendChild(wind);
-
-    var thermalSensation = document.createElement('p');
-    thermalSensation.textContent = 'Thermal Sensation: ' + (data.main.feels_like - 273.15).toFixed(2) + '°C';
-    weatherInfo.appendChild(thermalSensation);
-
-    var pressure = document.createElement('p');
-    pressure.textContent = 'Pressure: ' + data.main.pressure + ' hPa';
-}
-
-function saveLastLocation(city, data) {
-  var lastLocation = {
-    city: city,
-    data: data
-  };
-
-  localStorage.setItem('last location', JSON.stringify(lastLocation));
-}
-window.onload = function() {
-  var lastLocationJson = localStorage.getItem('last location');
-  if (lastLocationJson) {
-    var lastLocation = JSON.parse(lastLocationJson);
-    document.getElementById('cityInput').value = lastLocation.city;
-    showWeather(lastLocation.data);
-  }
-};
+searchBtn.addEventListener('click', ()=>{
+    checkWeather(inputBox.value);
+});

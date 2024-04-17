@@ -1,30 +1,60 @@
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="shortcut icon" href="./assets/nube.ico" type="image/x-icon">
+  <title>Weather app</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="search-box">
+        <input type="text" placeholder="Enter your location" class="input-box">
   
-  <head>
-    <title>Weather App</title>
-    <link rel="shortcut icon" href="./img/nube.ico" type="image/x-icon">
-    <link rel="stylesheet" type="text/css" href="style.css">
-  </head>
-
-  <body>
-    <header>
-      <h1>Weather App</h1>
-    </header>
-    
-    <div class="container">
-      <input type="text" id="cityInput" placeholder="Enter the city name">
-      <button onclick="getWeather()">get the weather</button>
-      <div id="weatherInfo"></div>
+        <button class="fa-solid fa-magnifying-glass" id="searchBtn"></button>
+      </div>
     </div>
-
-    <footer>
-      <p>@Samuel Andres Herrera</p>
-    </footer>
-    
-    <script src="app.js"></script>
-  </body>
-
+  
+    <div class="location-not-found">
+      <h1>Sorry, Location not found!!!</h1>
+      <img src="/assets/404.png" alt="404 Error">
+    </div>
+  
+    <div class="weather-body">
+      <img src="/assets/cloud.png" alt="Weather Image" class="weather-img">
+  
+      <div class="weather-box">
+        <p class="temperature">0 <sup>°C</sup></p>
+        <p class="description">light rain</p>
+      </div>
+  
+      <div class="weather-details">
+        <div class="humidity">
+          <i class="fa-sharp fa-solid fa-droplet"></i>
+          <div class="text">
+            <span id="humidity">45%</span>
+            <p>Humidity</p>
+          </div>
+        </div>
+  
+        <div class="wind">
+          <i class="fa-solid fa-wind"></i>
+          <div class="text">
+            <span id="wind-speed">12Km/H</span>
+            <p>Wind Speed</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  
+  <script src="app.js"></script>
+  <script src="https://kit.fontawesome.com/595a890311.js" crossorigin="anonymous"></script>
+</body>
 
 </html>
