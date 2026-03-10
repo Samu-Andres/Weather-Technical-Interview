@@ -1,4 +1,4 @@
-/// apiKey = 'YOUR_OPENWEATHERMAP_API_KEY';
+import { API_KEY } from './config.js';
 
 const inputBox = document.querySelector('.input-box');
 const searchBtn = document.getElementById('searchBtn');
@@ -12,54 +12,48 @@ const location_not_found = document.querySelector('.location-not-found');
 
 const weather_body = document.querySelector('.weather-body');
 
-
-async function checkWeather(city){
-    const api_key = "YOUR_OPENWEATHERMAP_API_KEY";
-    const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${api_key}`;
-
-    const weather_data = await fetch(`${url}`).then(response => response.json());
-
-
-    if(weather_data.cod === `404`){
-        location_not_found.style.display = "flex";
-        weather_body.style.display = "none";
-        console.log("error");
+searchBtn.addEventListener('click', ()=>{
+    const city = inputBox.value.trim();
+    if(city === ''){
+        alert('Por favor ingresa una ubicación');
         return;
     }
+    checkWeather(city);
+});
 
-    console.log("run");
-    location_not_found.style.display = "none";
-    weather_body.style.display = "flex";
-    temperature.innerHTML = `${Math.round(weather_data.main.temp - 273.15)}°C`;
-    description.innerHTML = `${weather_data.weather[0].description}`;
+async function checkWeather(city){
+    try {
+        const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}`;
 
-    humidity.innerHTML = `${weather_data.main.humidity}%`;
-    wind_speed.innerHTML = `${weather_data.wind.speed}Km/H`;
+        const weather_data = await fetch(`${url}`).then(response => response.json());
 
+        if(weather_data.cod === `404`){
+            location_not_found.style.display = "flex";
+            weather_body.style.display = "none";
+            return;
+        }
 
-    switch(weather_data.weather[0].main){
-        case 'Clouds':
-            weather_img.src = "/assets/cloud.png";
-            break;
-        case 'Clear':
-            weather_img.src = "/assets/clear.png";
-            break;
-        case 'Rain':
-            weather_img.src = "/assets/rain.png";
-            break;
-        case 'Mist':
-            weather_img.src = "/assets/mist.png";
-            break;
-        case 'Snow':
-            weather_img.src = "/assets/snow.png";
-            break;
+        location_not_found.style.display = "none";
+        weather_body.style.display = "flex";
+        temperature.innerHTML = `${Math.round(weather_data.main.temp - 273.15)}°C`;
+        description.innerHTML = `${weather_data.weather[0].description}`;
+        humidity.innerHTML = `${weather_data.main.humidity}%`;
+        wind_speed.innerHTML = `${weather_data.wind.speed}Km/H`;
 
+        updateWeatherImage(weather_data.weather[0].main);
+    } catch(error) {
+        alert('Error al obtener datos del clima');
+        console.error(error);
     }
-
-    console.log(weather_data);
 }
 
-
-searchBtn.addEventListener('click', ()=>{
-    checkWeather(inputBox.value);
-});
+function updateWeatherImage(weatherType) {
+    const weatherImages = {
+        'Clouds': './assets/cloud.png',
+        'Clear': './assets/clear.png',
+        'Rain': './assets/rain.png',
+        'Mist': './assets/mist.png',
+        'Snow': './assets/snow.png'
+    };
+    weather_img.src = weatherImages[weatherType] || './assets/cloud.png';
+}
