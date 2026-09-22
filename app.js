@@ -541,12 +541,12 @@ inputBox.addEventListener('keydown', (event) => {
   }
 });
 
-locationBtn.addEventListener('click', () => {
-  clearError();
+function attemptGeolocation({ silent = false } = {}) {
   if (!navigator.geolocation) {
-    showError('Tu navegador no soporta geolocalización.');
+    if (!silent) showError('Tu navegador no soporta geolocalización.');
     return;
   }
+  if (!silent) clearError();
   setLoading(true);
   navigator.geolocation.getCurrentPosition(
     (position) => {
@@ -554,9 +554,17 @@ locationBtn.addEventListener('click', () => {
     },
     () => {
       setLoading(false);
-      showError('No se pudo obtener tu ubicación. Revisá los permisos del navegador.');
+      // En el intento automático al cargar la app no mostramos error: si el
+      // usuario todavía no decidió o rechazó el permiso, que busque a mano.
+      if (!silent) {
+        showError('No se pudo obtener tu ubicación. Revisá los permisos del navegador.');
+      }
     }
   );
+}
+
+locationBtn.addEventListener('click', () => {
+  attemptGeolocation();
 });
 
 renderHistory();
@@ -564,6 +572,12 @@ renderHistory();
   btn.classList.toggle('is-active', btn.dataset.unit === currentUnit);
 });
 unitLabelEl.textContent = `°${currentUnit}`;
+
+// Apenas abre la app, intenta mostrar el clima de la ubicación actual.
+// Si el usuario no otorgó el permiso (o el navegador lo rechaza), no
+// molesta con un error: simplemente queda la pantalla inicial para
+// buscar una ciudad a mano.
+attemptGeolocation({ silent: true });
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

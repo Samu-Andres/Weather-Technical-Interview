@@ -4,8 +4,9 @@ Aplicación del clima construida con HTML, CSS y JavaScript vanilla, como parte 
 
 ## Funcionalidades
 
+- Al abrir la app, intenta mostrar automáticamente el clima de tu ubicación actual (pide permiso de geolocalización al navegador). Si no lo otorgás, no molesta con un error: queda lista para buscar una ciudad a mano.
 - Búsqueda de clima por ciudad, con historial de las últimas 5 búsquedas guardado en `localStorage`.
-- Detección de ubicación por geolocalización del navegador.
+- Botón para volver a detectar tu ubicación actual cuando quieras.
 - Tarjeta principal con temperatura, sensación térmica, y una grilla de estadísticas: viento, humedad, visibilidad, presión y (cuando están disponibles) índice UV y punto de rocío.
 - Fondo dinámico que cambia de color según la condición climática (despejado, nublado, lluvia, tormenta, nieve, niebla, etc.).
 - Pronóstico de 5 días en franja horizontal, con "Hoy" como primera tarjeta.
