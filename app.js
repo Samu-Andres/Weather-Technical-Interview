@@ -1,6 +1,7 @@
 import { API_KEY } from './config.js';
 
 const BASE_URL = 'https://api.openweathermap.org/data/2.5';
+const ONECALL_URL = 'https://api.openweathermap.org/data/3.0/onecall';
 const HISTORY_KEY = 'weather_history';
 const UNIT_KEY = 'weather_unit';
 const MAX_HISTORY = 5;
@@ -23,6 +24,25 @@ const WEATHER_IMAGES = {
   Tornado: './assets/cloud.png'
 };
 
+const WEATHER_THEMES = {
+  Clear: { start: '#f7b955', end: '#2b3a67' },
+  Clouds: { start: '#8b98b8', end: '#2c3350' },
+  Rain: { start: '#4f6d8f', end: '#1b2740' },
+  Drizzle: { start: '#5b7fa6', end: '#20304a' },
+  Thunderstorm: { start: '#4a4266', end: '#151022' },
+  Snow: { start: '#cfe3f0', end: '#5b7692' },
+  Mist: { start: '#a9b4bf', end: '#454f5c' },
+  Fog: { start: '#a9b4bf', end: '#454f5c' },
+  Haze: { start: '#b7ab8c', end: '#4c463a' },
+  Smoke: { start: '#9b9086', end: '#3a352e' },
+  Dust: { start: '#c9a876', end: '#5c4a2e' },
+  Sand: { start: '#d9b579', end: '#5c4a2e' },
+  Ash: { start: '#8c8c8c', end: '#333333' },
+  Squall: { start: '#6c7a91', end: '#232c3d' },
+  Tornado: { start: '#6c7a91', end: '#232c3d' }
+};
+const DEFAULT_THEME = { start: '#7c6bf0', end: '#2a2265' };
+
 const inputBox = document.querySelector('.input-box');
 const searchBtn = document.getElementById('searchBtn');
 const locationBtn = document.getElementById('locationBtn');
@@ -30,12 +50,21 @@ const weatherImg = document.getElementById('weatherImg');
 const temperatureEl = document.getElementById('temperature');
 const unitLabelEl = document.getElementById('unitLabel');
 const descriptionEl = document.getElementById('description');
+const feelsLikeEl = document.getElementById('feelsLike');
 const humidityEl = document.getElementById('humidity');
 const windSpeedEl = document.getElementById('wind-speed');
+const visibilityEl = document.getElementById('visibility');
+const pressureEl = document.getElementById('pressure');
+const uviDetail = document.getElementById('uviDetail');
+const uvIndexEl = document.getElementById('uvIndex');
+const dewPointDetail = document.getElementById('dewPointDetail');
+const dewPointEl = document.getElementById('dewPoint');
 const placeNameEl = document.getElementById('placeName');
 const unitToggleEl = document.getElementById('unitToggle');
 const historyEl = document.getElementById('history');
 const forecastEl = document.getElementById('forecast');
+const mapCard = document.getElementById('mapCard');
+const mapFrame = document.getElementById('mapFrame');
 
 const dayModalOverlay = document.getElementById('dayModalOverlay');
 const dayModalClose = document.getElementById('dayModalClose');
@@ -45,17 +74,20 @@ const dayModalTemp = document.getElementById('dayModalTemp');
 const dayModalMinMax = document.getElementById('dayModalMinMax');
 const dayModalDesc = document.getElementById('dayModalDesc');
 const dayModalStats = document.getElementById('dayModalStats');
+const dayModalChart = document.getElementById('dayModalChart');
 const dayModalHourly = document.getElementById('dayModalHourly');
 
 const locationNotFound = document.querySelector('.location-not-found');
-const weatherBody = document.querySelector('.weather-body');
+const weatherBody = document.getElementById('weatherBody');
 const loadingState = document.getElementById('loadingState');
 const errorBanner = document.getElementById('errorBanner');
 
 let currentUnit = localStorage.getItem(UNIT_KEY) === 'F' ? 'F' : 'C';
 let lastMain = null;
+let lastDewPointKelvin = null;
 let lastForecastDays = [];
 let openDayIndex = null;
+let todayEntry = null;
 
 function setLoading(isLoading) {
   loadingState.classList.toggle('is-visible', isLoading);
@@ -87,14 +119,75 @@ function kelvinToUnit(kelvin, unit) {
   return unit === 'F' ? (celsius * 9) / 5 + 32 : celsius;
 }
 
+function applyWeatherTheme(main) {
+  const theme = WEATHER_THEMES[main] || DEFAULT_THEME;
+  document.body.style.setProperty('--bg-grad-start', theme.start);
+  document.body.style.setProperty('--bg-grad-end', theme.end);
+}
+
 function updateTemperatureDisplay() {
   if (!lastMain) return;
   temperatureEl.textContent = Math.round(kelvinToUnit(lastMain.temp, currentUnit));
   unitLabelEl.textContent = `°${currentUnit}`;
+  feelsLikeEl.textContent = `Sensación térmica ${Math.round(kelvinToUnit(lastMain.feels_like, currentUnit))}°${currentUnit}`;
+
+  if (lastDewPointKelvin !== null) {
+    dewPointEl.textContent = `${Math.round(kelvinToUnit(lastDewPointKelvin, currentUnit))}°${currentUnit}`;
+  }
+}
+
+function buildHourlyChartSVG(entries, unit) {
+  if (!entries.length) return '';
+
+  const width = 320;
+  const height = 100;
+  const padding = 14;
+  const temps = entries.map((entry) => kelvinToUnit(entry.main.temp, unit));
+  const min = Math.min(...temps);
+  const max = Math.max(...temps);
+  const range = max - min || 1;
+  const stepX = entries.length > 1 ? (width - padding * 2) / (entries.length - 1) : 0;
+
+  const points = temps.map((temp, index) => {
+    const x = padding + index * stepX;
+    const y = height - padding - ((temp - min) / range) * (height - padding * 2);
+    return [x, y];
+  });
+
+  const linePoints = points.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+  const areaPoints = `${padding.toFixed(1)},${(height - padding).toFixed(1)} ${linePoints} ${(width - padding).toFixed(1)},${(height - padding).toFixed(1)}`;
+  const dots = points.map(([x, y]) => `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3" class="chart-dot" />`).join('');
+
+  return `<svg viewBox="0 0 ${width} ${height}" class="hourly-chart-svg" preserveAspectRatio="none" role="img" aria-label="Temperatura por hora">
+    <polygon points="${areaPoints}" class="chart-area"></polygon>
+    <polyline points="${linePoints}" class="chart-line"></polyline>
+    ${dots}
+  </svg>`;
 }
 
 function renderForecastDisplay() {
   forecastEl.innerHTML = '';
+
+  if (todayEntry) {
+    const todayCard = document.createElement('div');
+    todayCard.className = 'forecast-day is-today';
+
+    const label = document.createElement('span');
+    label.className = 'day-label';
+    label.textContent = 'Hoy';
+
+    const icon = document.createElement('img');
+    icon.src = WEATHER_IMAGES[todayEntry.weather[0].main] || './assets/cloud.png';
+    icon.alt = todayEntry.weather[0].main;
+
+    const temp = document.createElement('span');
+    temp.className = 'day-temp';
+    temp.textContent = `${Math.round(kelvinToUnit(todayEntry.main.temp, currentUnit))}°`;
+
+    todayCard.append(label, icon, temp);
+    forecastEl.appendChild(todayCard);
+  }
+
   lastForecastDays.forEach((day, index) => {
     const card = document.createElement('div');
     card.className = 'forecast-day';
@@ -150,6 +243,8 @@ function renderDayModal(day) {
     dayModalStats.appendChild(el);
   });
 
+  dayModalChart.innerHTML = buildHourlyChartSVG(day.entries, currentUnit);
+
   dayModalHourly.innerHTML = '';
   day.entries.forEach((entry) => {
     const hour = document.createElement('div');
@@ -184,7 +279,7 @@ function closeDayModal() {
 
 forecastEl.addEventListener('click', (event) => {
   const card = event.target.closest('.forecast-day');
-  if (!card) return;
+  if (!card || card.classList.contains('is-today')) return;
   openDayModal(Number(card.dataset.index));
 });
 
@@ -287,21 +382,68 @@ async function fetchForecast(query) {
     const data = await response.json();
     if (!response.ok || String(data.cod) !== '200') {
       lastForecastDays = [];
+      todayEntry = null;
       renderForecastDisplay();
       return;
     }
+    todayEntry = data.list[0] || null;
     lastForecastDays = groupForecastByDay(data.list);
     renderForecastDisplay();
   } catch (error) {
     lastForecastDays = [];
+    todayEntry = null;
     renderForecastDisplay();
     console.error(error);
+  }
+}
+
+function getMapEmbedUrl(lat, lon) {
+  const delta = 0.06;
+  const bbox = [lon - delta, lat - delta, lon + delta, lat + delta].join('%2C');
+  return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat}%2C${lon}`;
+}
+
+function renderMap(lat, lon) {
+  if (typeof lat !== 'number' || typeof lon !== 'number') {
+    mapCard.hidden = true;
+    return;
+  }
+  mapFrame.src = getMapEmbedUrl(lat, lon);
+  mapCard.hidden = false;
+}
+
+async function fetchExtraStats(lat, lon) {
+  uviDetail.hidden = true;
+  dewPointDetail.hidden = true;
+  lastDewPointKelvin = null;
+
+  try {
+    const response = await fetch(`${ONECALL_URL}?lat=${lat}&lon=${lon}&exclude=minutely,hourly,daily,alerts&appid=${API_KEY}&lang=es`);
+    if (!response.ok) return;
+    const data = await response.json();
+
+    if (typeof data.current?.uvi === 'number') {
+      uvIndexEl.textContent = data.current.uvi.toFixed(1);
+      uviDetail.hidden = false;
+    }
+
+    if (typeof data.current?.dew_point === 'number') {
+      lastDewPointKelvin = data.current.dew_point;
+      dewPointEl.textContent = `${Math.round(kelvinToUnit(lastDewPointKelvin, currentUnit))}°${currentUnit}`;
+      dewPointDetail.hidden = false;
+    }
+  } catch (error) {
+    // El Índice UV y el punto de rocío son datos adicionales (One Call API).
+    // Si la key no tiene esa suscripción o falla la request, simplemente se ocultan.
+    console.error('No se pudieron obtener UV/punto de rocío:', error);
   }
 }
 
 function renderCurrentWeather(data) {
   locationNotFound.style.display = 'none';
   weatherBody.style.display = 'flex';
+
+  applyWeatherTheme(data.weather[0].main);
 
   placeNameEl.textContent = `${data.name}${data.sys?.country ? `, ${data.sys.country}` : ''}`;
   lastMain = data.main;
@@ -310,8 +452,17 @@ function renderCurrentWeather(data) {
   descriptionEl.textContent = data.weather[0].description;
   humidityEl.textContent = `${data.main.humidity}%`;
   windSpeedEl.textContent = `${(data.wind.speed * 3.6).toFixed(1)}Km/H`;
+  visibilityEl.textContent = typeof data.visibility === 'number' ? `${(data.visibility / 1000).toFixed(1)}km` : '-';
+  pressureEl.textContent = `${data.main.pressure}hPa`;
 
   updateWeatherImage(data.weather[0].main);
+
+  if (data.coord) {
+    renderMap(data.coord.lat, data.coord.lon);
+    fetchExtraStats(data.coord.lat, data.coord.lon);
+  } else {
+    mapCard.hidden = true;
+  }
 }
 
 async function checkWeather(city) {

@@ -6,12 +6,19 @@ Aplicación del clima construida con HTML, CSS y JavaScript vanilla, como parte 
 
 - Búsqueda de clima por ciudad, con historial de las últimas 5 búsquedas guardado en `localStorage`.
 - Detección de ubicación por geolocalización del navegador.
-- Pronóstico de 5 días con detalle por hora al hacer clic en cada día (modal).
+- Tarjeta principal con temperatura, sensación térmica, y una grilla de estadísticas: viento, humedad, visibilidad, presión y (cuando están disponibles) índice UV y punto de rocío.
+- Fondo dinámico que cambia de color según la condición climática (despejado, nublado, lluvia, tormenta, nieve, niebla, etc.).
+- Pronóstico de 5 días en franja horizontal, con "Hoy" como primera tarjeta.
+- Al hacer clic en un día del pronóstico se abre un modal con gráfico de temperatura por hora (SVG), detalle hora por hora y estadísticas del día.
+- Mapa embebido (OpenStreetMap) con la ubicación consultada.
 - Cambio de unidad entre Celsius y Fahrenheit, persistido en `localStorage`.
 - Modo claro/oscuro automático según la preferencia del sistema.
+- Diseño responsive: se adapta a celular, tablet y escritorio.
 - Indicador de carga mientras se consulta la API.
 - Mensajes de error en pantalla (sin `alert()`), cubriendo ciudad no encontrada, límite de solicitudes, errores del servidor y problemas de conexión.
 - PWA: instalable, con `manifest.json` y service worker (`sw.js`) que cachea el app shell sin cachear las respuestas de la API.
+
+> El índice UV y el punto de rocío usan la One Call API 3.0 de OpenWeatherMap, que requiere una suscripción aparte en tu cuenta (tiene capa gratuita, pero hay que activarla). Si tu key no tiene acceso a ese endpoint, esos dos datos simplemente no se muestran — el resto de la app funciona igual.
 
 ## Stack
 
