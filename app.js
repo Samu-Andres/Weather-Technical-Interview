@@ -49,11 +49,38 @@ const dayModalHourly = document.getElementById('dayModalHourly');
 
 const locationNotFound = document.querySelector('.location-not-found');
 const weatherBody = document.querySelector('.weather-body');
+const loadingState = document.getElementById('loadingState');
+const errorBanner = document.getElementById('errorBanner');
 
 let currentUnit = localStorage.getItem(UNIT_KEY) === 'F' ? 'F' : 'C';
 let lastMain = null;
 let lastForecastDays = [];
 let openDayIndex = null;
+
+function setLoading(isLoading) {
+  loadingState.classList.toggle('is-visible', isLoading);
+  if (isLoading) {
+    locationNotFound.style.display = 'none';
+    weatherBody.style.display = 'none';
+  }
+}
+
+function showError(message) {
+  errorBanner.textContent = message;
+  errorBanner.classList.add('is-visible');
+}
+
+function clearError() {
+  errorBanner.classList.remove('is-visible');
+  errorBanner.textContent = '';
+}
+
+function messageForStatus(status) {
+  if (status === 401) return 'La API key no es válida o no está autorizada.';
+  if (status === 429) return 'Se alcanzó el límite de solicitudes. Probá de nuevo en un momento.';
+  if (status >= 500) return 'El servicio del clima no está disponible ahora mismo. Probá más tarde.';
+  return 'No se pudo obtener el clima. Intentá de nuevo.';
+}
 
 function kelvinToUnit(kelvin, unit) {
   const celsius = kelvin - 273.15;
@@ -258,7 +285,7 @@ async function fetchForecast(query) {
   try {
     const response = await fetch(`${BASE_URL}/forecast?${query}&lang=es&appid=${API_KEY}`);
     const data = await response.json();
-    if (String(data.cod) !== '200') {
+    if (!response.ok || String(data.cod) !== '200') {
       lastForecastDays = [];
       renderForecastDisplay();
       return;
@@ -288,42 +315,60 @@ function renderCurrentWeather(data) {
 }
 
 async function checkWeather(city) {
+  clearError();
+  setLoading(true);
   try {
     const response = await fetch(`${BASE_URL}/weather?q=${encodeURIComponent(city)}&lang=es&appid=${API_KEY}`);
     const data = await response.json();
 
-    if (String(data.cod) === '404') {
-      locationNotFound.style.display = 'flex';
-      weatherBody.style.display = 'none';
+    if (!response.ok) {
+      setLoading(false);
+      if (response.status === 404) {
+        locationNotFound.style.display = 'flex';
+        weatherBody.style.display = 'none';
+        return;
+      }
+      showError(messageForStatus(response.status));
       return;
     }
 
+    setLoading(false);
     renderCurrentWeather(data);
     addToHistory(data.name);
     fetchForecast(`q=${encodeURIComponent(city)}`);
   } catch (error) {
-    alert('Error al obtener datos del clima');
+    setLoading(false);
+    showError('No se pudo conectar con el servicio del clima. Revisá tu conexión.');
     console.error(error);
   }
 }
 
 async function checkWeatherByCoords(lat, lon) {
+  clearError();
+  setLoading(true);
   try {
     const response = await fetch(`${BASE_URL}/weather?lat=${lat}&lon=${lon}&lang=es&appid=${API_KEY}`);
     const data = await response.json();
 
-    if (String(data.cod) === '404') {
-      locationNotFound.style.display = 'flex';
-      weatherBody.style.display = 'none';
+    if (!response.ok) {
+      setLoading(false);
+      if (response.status === 404) {
+        locationNotFound.style.display = 'flex';
+        weatherBody.style.display = 'none';
+        return;
+      }
+      showError(messageForStatus(response.status));
       return;
     }
 
+    setLoading(false);
     renderCurrentWeather(data);
     inputBox.value = data.name;
     addToHistory(data.name);
     fetchForecast(`lat=${lat}&lon=${lon}`);
   } catch (error) {
-    alert('Error al obtener datos del clima');
+    setLoading(false);
+    showError('No se pudo conectar con el servicio del clima. Revisá tu conexión.');
     console.error(error);
   }
 }
@@ -331,7 +376,7 @@ async function checkWeatherByCoords(lat, lon) {
 function triggerSearch() {
   const city = inputBox.value.trim();
   if (city === '') {
-    alert('Por favor ingresa una ubicación');
+    showError('Por favor ingresá una ubicación.');
     return;
   }
   checkWeather(city);
@@ -346,16 +391,19 @@ inputBox.addEventListener('keydown', (event) => {
 });
 
 locationBtn.addEventListener('click', () => {
+  clearError();
   if (!navigator.geolocation) {
-    alert('Tu navegador no soporta geolocalización');
+    showError('Tu navegador no soporta geolocalización.');
     return;
   }
+  setLoading(true);
   navigator.geolocation.getCurrentPosition(
     (position) => {
       checkWeatherByCoords(position.coords.latitude, position.coords.longitude);
     },
     () => {
-      alert('No se pudo obtener tu ubicación. Revisá los permisos del navegador.');
+      setLoading(false);
+      showError('No se pudo obtener tu ubicación. Revisá los permisos del navegador.');
     }
   );
 });

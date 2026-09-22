@@ -1,0 +1,10 @@
+[build]
+  command = "echo \"export const API_KEY = '$OPENWEATHER_API_KEY';\" > config.js"
+  publish = "."
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
