@@ -497,7 +497,8 @@ body {
 .modal-stat {
   background-color: var(--field-bg);
   border-radius: var(--radius-sm);
-  padding: 10px 12px;
+  padding: 10px 10px;
+  min-width: 0;
 }
 
 .modal-stat .stat-label {
@@ -508,9 +509,12 @@ body {
 
 .modal-stat .stat-value {
   display: block;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .modal-chart {
@@ -616,8 +620,16 @@ body {
     grid-template-columns: repeat(3, 1fr);
   }
 
+  .modal {
+    width: 480px;
+  }
+
   .modal-stats {
     grid-template-columns: repeat(4, 1fr);
+  }
+
+  .modal-stat .stat-value {
+    font-size: 16px;
   }
 }
 
